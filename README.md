@@ -1,2 +1,3 @@
 # CSC11300
-CSC 11300 - Programming Languages S: 8/27/19
+### The City College of New York
+### Fall Semester 2019 - Ahmet Yuksel
