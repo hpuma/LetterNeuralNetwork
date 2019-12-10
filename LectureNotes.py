@@ -43,3 +43,7 @@
 
 # Important String methods
 # .join( ).strip() .split()
+
+December 10 2019
+# pass keyword used to tell the python interpreter that you are leaving the portion of a class or function blank.
+# self. keyword <=> this.
