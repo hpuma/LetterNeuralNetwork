@@ -1,4 +1,4 @@
-# Exercise
+ # Exercise
 # Make a list for each line of a file, where each element of a list is a word
 # of the text file.
 current_file = open("ListFile.txt","w") # Name and location of the output file

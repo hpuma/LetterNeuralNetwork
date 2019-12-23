@@ -5,7 +5,7 @@
 read_file = open("ReadMe.txt","r") # File to be read 
 out_file = open("ReadMeResults.txt","w+") # Output file where each line represents a boolean on whether or not the word has the vowels in order
 vowels = ["a","e","i","o","u"] # Vowel list used for comparing each line
-lineread = read_file.readlines(); # List containing each line of the input file where each line is stored as a string
+lineread = read_file.readlines() # List containing each line of the input file where each line is stored as a string
 
 for line in lineread: # Iterating through the lines that were in the input file
     line = line.lower() # Making all the chars in a line to lower case so that we can easily compare with the vowels list
