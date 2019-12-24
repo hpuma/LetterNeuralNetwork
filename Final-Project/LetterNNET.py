@@ -27,6 +27,7 @@ class LetterNNET:
         new_list = [[]]
         for line in line_read:
             new_list.append(list.copy(ast.literal_eval(line)))
+        del new_list[:1]
         return new_list
     # Prints the trained data set based on the letter
     def print_training_set(self,letter):
@@ -74,13 +75,16 @@ class LetterNNET:
         # PRINTING THE self.T_H trained set
         self.print_training_set("H")
     # CWO: Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
-    def trainLSet(self, data_fname, tuple_size):
+    def trainLSet(self, data_fname):
         letter_data = self.grabData(data_fname)
-        for i in range(0,len(letter_data)):
-            letter_list = list.copy(letter_data[i])
-            letter_data[i] = list.copy([letter_list[j:j + tuple_size] for j in range(0, len(letter_list), tuple_size)])
-            for j in range(0,len(letter_data[i])):
-                add_count = self.tuple_to_decimal(letter_data[i][j])
-                self.T_L[j][add_count] = self.T_L[j][add_count] + 1
-        # PRINTING THE self.T_H trained set
+        #Increments corresponding value of sample sets in the; ie if j1 = [0,1,0] then Lj1[2] += 1 
+        for arr in letter_data:
+            temp_j1 = str(arr[3-1]) + str(arr[7-1]) + str(arr[9-1])
+            temp_j2 = str(arr[1-1]) + str(arr[4-1]) + str(arr[12-1])
+            temp_j3 = str(arr[5-1]) + str(arr[6-1]) + str(arr[11-1])
+            temp_j4 = str(arr[2-1]) + str(arr[8-1]) + str(arr[10-1])
+            self.T_L[0][int(temp_j1,2)]  = self.T_L[0][int(temp_j1,2)] + 1
+            self.T_L[1][int(temp_j2,2)] = self.T_L[1][int(temp_j2,2)] + 1
+            self.T_L[2][int(temp_j3,2)] = self.T_L[2][int(temp_j3,2)] + 1
+            self.T_L[3][int(temp_j4,2)] =  self.T_L[3][int(temp_j4,2)] + 1
         self.print_training_set("L")
