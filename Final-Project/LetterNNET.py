@@ -11,6 +11,22 @@ class LetterNNET:
         self.H = [[1,0,1,1,1,1,1,0,1,1,0,1],[1,0,1,1,0,1,1,1,1,1,0,1],[1,0,1,1,1,1,1,1,1,1,0,1]]
         self.L = [1,0,0,1,0,0,1,0,0,1,1,1]
     # HELPER FUNCTIONS
+    # Creates a list of size "listLength" where the values are disctly random in the range [1,24]
+    # 
+    def randomTuple(self, listLength, tuple_size):
+        distinctVals = dict()
+        A = [None] * listLength
+        total_times = listLength-1
+        for i in range(0,listLength):
+            distinct = False
+            while not distinct:
+                new_val = randrange(1,listLength+1)
+                if(distinctVals.get(new_val) == None):
+                    A[i] = new_val
+                    distinctVals[new_val] = 1
+                    distinct = True
+        return list.copy([A[j:j + tuple_size] for j in range(0,listLength, tuple_size)])
+        
     # Takes any tuple and returns the integer value of it
     def tuple_to_decimal(self,A):
         sum = 0
