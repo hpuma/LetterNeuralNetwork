@@ -16,17 +16,37 @@ class LetterNNET:
     def randomTuple(self, listLength, tuple_size):
         distinctVals = dict()
         A = [None] * listLength
-        total_times = listLength-1
         for i in range(0,listLength):
             distinct = False
             while not distinct:
-                new_val = randrange(1,listLength+1)
+                new_val = randrange(0,listLength)
                 if(distinctVals.get(new_val) == None):
                     A[i] = new_val
                     distinctVals[new_val] = 1
                     distinct = True
         return list.copy([A[j:j + tuple_size] for j in range(0,listLength, tuple_size)])
-        
+    # Creates Sm set list that has uses the values from the j_set as the indexes to access the letter_list values
+    def buildSmSet(self, letter_list, j_set, tuple_size):
+        Sm_set = [None]*len(letter_list)
+        Sm_set = [Sm_set[j:j + tuple_size] for j in range(0,len(Sm_set), tuple_size)]
+        for i in range(0,len(Sm_set)):
+            for j in range (0,len(Sm_set[i])):
+                Sm_set[i][j] = letter_list[j_set[i][j]]
+        return Sm_set
+    # Trains the H or L Class based on the Smset
+    # train_HSet: True, trains H class..... False, trains L class
+    def trainSm(self, Sm_set, train_HSet):
+        str_val = ""
+        if train_HSet:
+            for i in range(0,len(Sm_set)):
+                for j in range(0,len(Sm_set[i])):
+                    str_val = ''.join([str(Item) for Item in Sm_set[i]])
+                    self.T_H[i][int(str_val,2)] +=1
+        else: 
+            for i in range(0,len(Sm_set)):
+                for j in range(0,len(Sm_set[i])):
+                    str_val = ''.join([str(Item) for Item in Sm_set[i]])
+                    self.T_L[i][int(str_val,2)] +=1
     # Takes any tuple and returns the integer value of it
     def tuple_to_decimal(self,A):
         sum = 0
@@ -82,12 +102,10 @@ class LetterNNET:
     # CWO: Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
     def trainHSet(self, data_fname, tuple_size):
         letter_data = self.grabData(data_fname)
-        for i in range(0,len(letter_data)):
-            letter_list = list.copy(letter_data[i])
-            letter_data[i] = list.copy([letter_list[j:j + tuple_size] for j in range(0, len(letter_list), tuple_size)])
-            for j in range(0,len(letter_data[i])):
-                add_count = self.tuple_to_decimal(letter_data[i][j])
-                self.T_H[j][add_count] = self.T_H[j][add_count] +1
+        j_set = self.randomTuple(len(letter_data[0]),tuple_size)
+        for i in letter_data:
+            Sm_set = self.buildSmSet(i,j_set,tuple_size)
+            self.trainSm(Sm_set,True)
         # PRINTING THE self.T_H trained set
         self.print_training_set("H")
     # CWO: Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
