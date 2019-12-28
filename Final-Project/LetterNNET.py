@@ -7,15 +7,47 @@ class LetterNNET:
         self.T_H = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
         # T counts
         self.T_L = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
-
-        self.H_Sm = []
-        self.L_Sm = []
-
-
+        # Storing the Jm sets used when training the letter class
+        self.H_Jm = []
+        self.L_Jm = []
         # Templates from each letter class, this is used to generate an array with a random noise
         self.H = [[1,0,1,1,1,1,1,0,1,1,0,1],[1,0,1,1,0,1,1,1,1,1,0,1],[1,0,1,1,1,1,1,1,1,1,0,1]]
         self.L = [1,0,0,1,0,0,1,0,0,1,1,1]
     # HELPER FUNCTIONS
+    # Grabs the string representations of the lines in the file "file_name", this function returns a list of lists
+    def grabData(self, file_name):
+        read_file = open(file_name,"r")
+        line_read = read_file.readlines()
+        data_list = []
+        for line in line_read:
+            data_list.append(list.copy(ast.literal_eval(line)))
+        return data_list
+    # Takes any tuple and returns the integer value of it
+    def tuple_to_int(self,A):
+        sum = 0
+        power = 0
+        for i in reversed(A):
+            if(i != 0):
+                sum+=2**power
+            power+=1
+        return sum
+        # TODO
+    def compute_list_val(self, input_list, Sm_set): # CWO, MUST MAKE IT COMPATIBLE WITH BOTH STORED Jm SETS ! ! ! 
+        list_sum = 0
+        for i in Sm_set:
+            list_sum += input_list[self.tuple_to_int(Sm_set)]
+            pass
+    # Prints the trained data set based on the letter
+    def print_training_set(self,letter):
+        letter = letter.lower();
+        if letter == "h":
+            print("TRAINED SET FOR: H")
+            for i in range(0,len(self.T_H)):
+                print(self.T_H[i])
+        elif letter == "l":
+            print("TRAINED SET FOR: L")
+            for i in range(0,len(self.T_L)):
+                print(self.T_L[i])
     # Creates a list of size "listLength" where the values are disctly random in the range [1,24]
     def build_JmSet(self, listLength, tuple_size):
         distinctVals = dict()
@@ -29,56 +61,28 @@ class LetterNNET:
                     distinctVals[new_val] = 1
                     distinct = True
         return list.copy([A[j:j + tuple_size] for j in range(0,listLength, tuple_size)])
-    # Creates Sm set list that has uses the values from the j_set as the indexes to access the letter_list values
-    def build_SmSet(self, letter_list, j_set, tuple_size):
+    # Creates Sm set list that has uses the values from the jm_set as the indexes to access the letter_list values
+    def build_SmSet(self, letter_list, jm_set, tuple_size):
         Sm_set = [None]*len(letter_list)
         Sm_set = [Sm_set[j:j + tuple_size] for j in range(0,len(Sm_set), tuple_size)]
         for i in range(0,len(Sm_set)):
             for j in range (0,len(Sm_set[i])):
-                Sm_set[i][j] = letter_list[j_set[i][j]]
+                Sm_set[i][j] = letter_list[jm_set[i][j]]
         return Sm_set
     # Trains the H or L Class based on the Smset
     # train_HSet: True, trains H class..... False, trains L class
-    def trainSm(self, Sm_set, train_HSet):
-        str_val = ""
+    def train_Sm(self, Sm_set, train_HSet):
+        str_val = 0
         if train_HSet:
             for i in range(0,len(Sm_set)):
                 for j in range(0,len(Sm_set[i])):
-                    str_val = ''.join([str(Item) for Item in Sm_set[i]])
-                    self.T_H[i][int(str_val,2)] +=1
+                    str_val = self.tuple_to_int(Sm_set[i])
+                    self.T_H[i][str_val] +=1
         else: 
             for i in range(0,len(Sm_set)):
                 for j in range(0,len(Sm_set[i])):
-                    str_val = ''.join([str(Item) for Item in Sm_set[i]])
-                    self.T_L[i][int(str_val,2)] +=1
-    # Takes any tuple and returns the integer value of it
-    def tuple_to_decimal(self,A):
-        sum = 0
-        power = 0
-        for i in reversed(A):
-            if(i != 0):
-                sum+=2**power
-            power+=1
-        return sum
-    # Grabs the string representations of the lines in the file "file_name", this function returns a list of lists
-    def grabData(self, file_name):
-        read_file = open(file_name,"r")
-        line_read = read_file.readlines()
-        data_list = []
-        for line in line_read:
-            data_list.append(list.copy(ast.literal_eval(line)))
-        return data_list
-    # Prints the trained data set based on the letter
-    def print_training_set(self,letter):
-        letter = letter.lower();
-        if letter == "h":
-            print("TRAINED SET FOR: H")
-            for i in range(0,len(self.T_H)):
-                print(self.T_H[i])
-        elif letter == "l":
-            print("TRAINED SET FOR: L")
-            for i in range(0,len(self.T_L)):
-                print(self.T_L[i])
+                    str_val = self.tuple_to_int(Sm_set[i])
+                    self.T_L[i][str_val] +=1
     # Neural Network Tools
     # Generates "dataSize" random H arrays with a randomized noise index. ALl the random array get stored in "file_name"
     def generateHData(self,file_name, dataSize):
@@ -102,21 +106,30 @@ class LetterNNET:
     # Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
     def trainHSet(self, data_fname, tuple_size):
         letter_data = self.grabData(data_fname)
-        self.H_Sm = self.build_JmSet(len(letter_data[0]),tuple_size)
+        self.H_Jm = self.build_JmSet(len(letter_data[0]),tuple_size)
         for i in letter_data:
-            Sm_set = self.build_SmSet(i,self.H_Sm,tuple_size)
-            self.trainSm(Sm_set,True)
+            Sm_set = self.build_SmSet(i,self.H_Jm,tuple_size)
+            self.train_Sm(Sm_set,True)
         # PRINTING THE self.T_H trained set
         self.print_training_set("H")
     # Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
     def trainLSet(self, data_fname, tuple_size):
         letter_data = self.grabData(data_fname)
-        self.L_Sm = self.build_JmSet(len(letter_data[0]),tuple_size)
+        self.L_Jm = self.build_JmSet(len(letter_data[0]),tuple_size)
         for i in letter_data:
-            Sm_set = self.build_SmSet(i,self.L_Sm,tuple_size)
-            self.trainSm(Sm_set,False)
+            Sm_set = self.build_SmSet(i,self.L_Jm,tuple_size)
+            self.train_Sm(Sm_set,False)
         # PRINTING THE self.T_H trained set
         self.print_training_set("L")       
-
-    def sampleTesting(self,sample_data_fname):
-        pass
+    # CWO: 
+    def sampleTesting(self, sample_data_fname):
+        #TODO
+        sample_data = self.grabData(sample_data_fname)
+        H_count = 0
+        L_count = 0
+        
+        H_sum = 0
+        L_sum = 0
+        for i in sample_data:
+            for j in sample_data:
+                pass
