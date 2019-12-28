@@ -1,3 +1,3 @@
 # CSC11300
 ### The City College of New York
-### Fall Semester 2019 - Ahmet Yuksel
+### Fall Semester 2019
