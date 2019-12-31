@@ -31,12 +31,27 @@ class LetterNNET:
                 sum+=2**power
             power+=1
         return sum
-        # TODO
-    def compute_list_val(self, input_list, Sm_set): # CWO, MUST MAKE IT COMPATIBLE WITH BOTH STORED Jm SETS ! ! ! 
+    # TODO
+    def divideList(self,A, tuple_size):
+        return list.copy([A[j:j + tuple_size] for j in range(0,len(A), tuple_size)])
+    # Note: must specify using the H or L Sm set attributes
+    def compute_list_val(self,input_list,sample_from,tuple_size): #
+        sample_from = sample_from.lower()
         list_sum = 0
-        for i in Sm_set:
-            list_sum += input_list[self.tuple_to_int(Sm_set)]
-            pass
+        if 'h' in sample_from:
+            list_Sm = self.build_SmSet(input_list,self.H_Jm, tuple_size)
+            j = 0
+            for i in list_Sm:
+                list_sum += self.T_H[j][self.tuple_to_int(i)] # Gets the sum of the n tuples
+                j+=1
+            return list_sum
+        elif 'l' in sample_from:
+            list_Sm = self.build_SmSet(input_list,self.L_Jm, tuple_size)
+            j = 0
+            for i in list_Sm:
+                list_sum += self.T_L[j][self.tuple_to_int(i)] # Gets the sum of the n tuples
+                j+=1
+            return list_sum
     # Prints the trained data set based on the letter
     def print_training_set(self,letter):
         letter = letter.lower();
@@ -122,14 +137,19 @@ class LetterNNET:
         # PRINTING THE self.T_H trained set
         self.print_training_set("L")       
     # CWO: 
-    def sampleTesting(self, sample_data_fname):
-        #TODO
+    def sampleTesting(self, sample_data_fname,tuple_size):
         sample_data = self.grabData(sample_data_fname)
         H_count = 0
         L_count = 0
-        
         H_sum = 0
         L_sum = 0
         for i in sample_data:
-            for j in sample_data:
-                pass
+            H_sum = self.compute_list_val(i,"H",tuple_size)
+            L_sum = self.compute_list_val(i,"L",tuple_size)
+            if H_sum > L_sum:
+                H_count+=1
+            else:
+                L_count+=1
+        # Prints the number of H and L guessed
+        print("H:\t",H_count)
+        print("L:\t",L_count)
