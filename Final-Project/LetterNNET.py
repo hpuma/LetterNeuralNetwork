@@ -29,7 +29,8 @@ class LetterNNET:
     def divideList(self, A, tuple_size):
         return list.copy([A[j:j + tuple_size] for j in range(0,len(A), tuple_size)])
     # Note: must specify using the H or L Sm set attributes
-    def compute_list_val(self,input_list,sample_from,tuple_size): #
+    # Computes the value of the input_list based on the H or L class
+    def compute_list_val(self, input_list, sample_from, tuple_size): #
         sample_from = sample_from.lower()
         list_sum = 0
         j = 0        
@@ -109,10 +110,23 @@ class LetterNNET:
             add_noise+=1
         return new_l
     # TODO : MAKE SAMPLE GENERATOR THAT MAKES A SAMPLE TO TEST ALONG WITH RETURNING AN ARRAY WHETHER THE THE SAMPLE LINE IS AN H OR L
-    def generateSample(self, file_name, sampleSize, tuple_size):
+    def generateSample(self, file_name, sampleSize, dataNoise):
+        current_file = open(file_name,"w")
         sampleData = []
         for i in range(0,sampleSize):
-            pass
+            if randrange(1,10)%2 == 0:
+                new_list = self.generateHList(dataNoise)
+                sampleData.append(1)
+            else:
+                new_list = self.generateLList(dataNoise)
+                sampleData.append(0)
+            print(new_list,file=current_file)
+        print(sampleData,file=current_file)
+
+    def getSampleList(self, sampleData):
+        sampleList = sampleData[-1]
+        sampleData.pop()
+        return sampleList
     # Generates "dataSize" random H arrays with a randomized noise index. ALl the random array get stored in "file_name"
     def generateHData(self, file_name, dataSize, dataNoise):
         current_file = open(file_name,"w")
@@ -130,15 +144,21 @@ class LetterNNET:
     # Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
     def trainHSet(self, data_fname, tuple_size):
         letter_data = self.grabData(data_fname)
-        self.H_Jm = self.build_JmSet(len(letter_data[0]),tuple_size)
+        letter_length = letter_data[0]
+        letter_info = self.getSampleList(letter_data)
+        self.H_Jm = self.build_JmSet(letter_length,tuple_size)
         for i in letter_data:
-            Sm_set = self.build_SmSet(i,self.H_Jm,tuple_size)
-            self.train_Sm(Sm_set,True)
+            if(len(i) == letter_length):
+                Sm_set = self.build_SmSet(i,self.H_Jm,tuple_size)
+                self.train_Sm(Sm_set,True)
+            
         # PRINTING THE self.T_H trained set
         self.print_training_set("H")
     # Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
     def trainLSet(self, data_fname, tuple_size):
         letter_data = self.grabData(data_fname)
+        letter_length 
+        letter_info = self.getSampleList(letter_data)
         self.L_Jm = self.build_JmSet(len(letter_data[0]),tuple_size)
         for i in letter_data:
             Sm_set = self.build_SmSet(i,self.L_Jm,tuple_size)
@@ -148,6 +168,7 @@ class LetterNNET:
     # CWO: 
     def sampleTesting(self, sample_data_fname,tuple_size):
         sample_data = self.grabData(sample_data_fname)
+        sample_info = self.getSampleList(sample_data)
         H_count = 0
         L_count = 0
         H_sum = 0
