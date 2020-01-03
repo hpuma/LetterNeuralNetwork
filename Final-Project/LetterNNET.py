@@ -13,21 +13,74 @@ class LetterNNET:
         # Templates for each letter class, this is used to generate an array with a random noise
         self.H = [[1,0,1,1,1,1,1,0,1,1,0,1],[1,0,1,1,0,1,1,1,1,1,0,1],[1,0,1,1,1,1,1,1,1,1,0,1]]
         self.L = [1,0,0,1,0,0,1,0,0,1,1,1]
+    # DATA GENERATOR HELPER FUNCTIONS
+    # Generates a H or L class list with "num_noise" randomized pixels as noise
+    # Noise: A pixel that had it's previous value negated
+    def generateHList(self, num_noise):
+        new_h = list.copy(self.H[randrange(0,3)]) # Making a copy of the H template
+        add_noise = 0
+        while add_noise != num_noise:
+            pixel_noise = randrange(0,12) # Picking the random noise pixel
+            new_h[pixel_noise] = 1-new_h[pixel_noise] # Negating the pixel value at the noise index
+            add_noise += 1
+        return new_h
+    def generateLList(self, num_noise):
+        new_l = list.copy(self.L) # Making a copy of the L template
+        add_noise = 0
+        while add_noise != num_noise:
+            pixel_noise = randrange(0,12) # Picking the random noise pixel
+            new_l[pixel_noise] = 1-new_l[pixel_noise] # Negating the pixel value at the noise index
+            add_noise+=1
+        return new_l
+    # Generates "dataSize" random H arrays with "num_noise" random pixels as noise 
+    # ALl the random lists get stored in "file_name"
+    def generateHData(self, file_name, dataSize, num_noise):
+        current_file = open(file_name,"w")
+        for i in range(0, dataSize):
+            new_h = self.generateHList(num_noise)
+            print(new_h,file=current_file)
+        current_file.close()
+    # Generates "dataSize" random L arrays with "num_noise" random pixels as noise. 
+    # ALl the random lists get stored in "file_name"
+    def generateLData(self, file_name, dataSize, num_noise):
+        current_file = open(file_name,"w")
+        for i in range(0, dataSize):
+            new_l = self.generateLList(num_noise)
+            print(new_l,file=current_file)
+        current_file.close()
+   #
+    def generateSample(self, file_name, sampleSize, num_noise):
+        current_file = open(file_name,"w")
+        sampleData = []
+        for i in range(0,sampleSize):
+            if randrange(1,10)%2 == 0:
+                new_list = self.generateHList(num_noise)
+                sampleData.append(1)
+            else:
+                new_list = self.generateLList(num_noise)
+                sampleData.append(0)
+            print(new_list,file=current_file)
+        print(sampleData,file=current_file,end="")
+    # Gets the last list from the sample data because it is the only list that tells us which letters were randomly generated
+    def getSampleList(self, sampleData):
+        sampleList = sampleData[-1]
+        sampleData.pop()
+        return sampleList
+    def getSampleLetters(self, sampleList):
+        letterData = [0,0]
+        for i in sampleList:
+            if i == 0:
+                letterData[i]+=1
+            elif i == 1:
+                letterData[i]+=1
+        return letterData
     # HELPER FUNCTIONS
-    # Grabs the string representations of the lines in the file "file_name", this function returns a list of lists
-    def grabData(self, file_name):          
-        read_file = open(file_name,"r")
-        line_read = read_file.readlines()
-        data_list = []
-        for line in line_read:
-            data_list.append(list.copy(ast.literal_eval(line)))
-        return data_list
     # Takes any tuple and returns the integer value of it
     # To accomplish this we turn the list into a string and use the python int() to turn it into a string, we pass 2 to let it know that we are going from base 2 to base 10
-    def tuple_to_int(self,A):
-        return int("".join([str(i) for i in A]),2)
     def divideList(self, A, tuple_size):
         return list.copy([A[j:j + tuple_size] for j in range(0,len(A), tuple_size)])
+    def tuple_to_int(self,A):
+        return int("".join([str(i) for i in A]),2)
     # Note: must specify using the H or L Sm set attributes
     # Computes the value of the input_list based on the H or L class
     def compute_list_val(self, input_list, sample_from, tuple_size): #
@@ -46,7 +99,7 @@ class LetterNNET:
                 list_sum += self.T_L[j][self.tuple_to_int(i)] # Gets the sum of the n tuples
                 j+=1
             return list_sum
-    # Prints the trained data set based on the letter
+        # Prints the trained data set based on the letter
     def print_training_set(self,letter):
         letter = letter.lower();
         if 'h' in letter:
@@ -57,7 +110,16 @@ class LetterNNET:
             print("TRAINED SET FOR: L")
             for i in self.T_L:
                 print(i)
-    # Creates a list of size "listLength" where the values are disctly random in the range [1,24]
+    # NEURAL NETWORK FUNCTIONS
+    # Grabs the string representations of the lines in the file "file_name", this function returns a list of lists
+    def grabData(self, file_name):          
+        read_file = open(file_name,"r")
+        line_read = read_file.readlines()
+        data_list = []
+        for line in line_read:
+            data_list.append(list.copy(ast.literal_eval(line)))
+        return data_list
+        # Creates a list of size "listLength" where the values are disctly random in the range [1,24]
     def build_JmSet(self, listLength, tuple_size):
         distinctVals = dict()
         A = [None] * listLength
@@ -90,65 +152,7 @@ class LetterNNET:
             for i in range(0,len(Sm_set)):
                 str_val = self.tuple_to_int(Sm_set[i])
                 self.T_L[i][str_val] += 1
-    # Neural Network Tools
-    # Generates a H or L class list with a randomized pixel as noise
-    def generateHList(self, num_noise):
-        new_h = list.copy(self.H[randrange(0,3)]) # Making a copy of the H template
-        add_noise = 0
-        while add_noise != num_noise:
-            pixel_noise = randrange(0,12) # Picking the random noise pixel
-            new_h[pixel_noise] = 1-new_h[pixel_noise] # Negating the pixel value at the noise index
-            add_noise += 1
-        return new_h
-    def generateLList(self, num_noise):
-        new_l = list.copy(self.L) # Making a copy of the L template
-        add_noise = 0
-        while add_noise != num_noise:
-            pixel_noise = randrange(0,12) # Picking the random noise pixel
-            new_l[pixel_noise] = 1-new_l[pixel_noise] # Negating the pixel value at the noise index
-            add_noise+=1
-        return new_l
-    # TODO : MAKE SAMPLE GENERATOR THAT MAKES A SAMPLE TO TEST ALONG WITH RETURNING AN ARRAY WHETHER THE THE SAMPLE LINE IS AN H OR L
-    def generateSample(self, file_name, sampleSize, dataNoise):
-        current_file = open(file_name,"w")
-        sampleData = []
-        for i in range(0,sampleSize):
-            if randrange(1,10)%2 == 0:
-                new_list = self.generateHList(dataNoise)
-                sampleData.append(1)
-            else:
-                new_list = self.generateLList(dataNoise)
-                sampleData.append(0)
-            print(new_list,file=current_file)
-        print(sampleData,file=current_file,end="")
-    # Gets the last list from the sample data because it is the only list that tells us which letters were randomly generated
-    def getSampleList(self, sampleData):
-        sampleList = sampleData[-1]
-        sampleData.pop()
-        return sampleList
-    def getSampleLetters(self, sampleList):
-        letterData = [0,0]
-        for i in sampleList:
-            if i == 0:
-                letterData[i]+=1
-            elif i == 1:
-                letterData[i]+=1
-        return letterData
 
-    # Generates "dataSize" random H arrays with a randomized noise index. ALl the random array get stored in "file_name"
-    def generateHData(self, file_name, dataSize, dataNoise):
-        current_file = open(file_name,"w")
-        for i in range(0, dataSize):
-            new_h = self.generateHList(dataNoise)
-            print(new_h,file=current_file)
-        current_file.close()
-    # Generates "dataSize" random L arrays with a randomized noise index. ALl the random array get stored in "file_name"
-    def generateLData(self, file_name, dataSize, dataNoise):
-        current_file = open(file_name,"w")
-        for i in range(0, dataSize):
-            new_l = self.generateLList(dataNoise)
-            print(new_l,file=current_file)
-        current_file.close()
     # Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
     def trainHSet(self, data_fname, tuple_size):
         letter_data = self.grabData(data_fname)
