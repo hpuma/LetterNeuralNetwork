@@ -15,20 +15,22 @@ class LetterNNET:
         self.L = [1,0,0,1,0,0,1,0,0,1,1,1]
     # DATA GENERATOR HELPER FUNCTIONS
     # Generates a H or L class list with "num_noise" randomized pixels as noise
-    # Noise: A pixel that had it's previous value negated
+    # Noise: A pixel in the letter list that had it's previous value negated
     def generateHList(self, num_noise):
         new_h = list.copy(self.H[randrange(0,3)]) # Making a copy of the H template
+        h_length = len(new_h)
         add_noise = 0
         while add_noise != num_noise:
-            pixel_noise = randrange(0,12) # Picking the random noise pixel
+            pixel_noise = randrange(0,h_length) # Picking the random noise pixel
             new_h[pixel_noise] = 1-new_h[pixel_noise] # Negating the pixel value at the noise index
             add_noise += 1
         return new_h
     def generateLList(self, num_noise):
         new_l = list.copy(self.L) # Making a copy of the L template
+        l_length = len(new_l)
         add_noise = 0
         while add_noise != num_noise:
-            pixel_noise = randrange(0,12) # Picking the random noise pixel
+            pixel_noise = randrange(0,l_length) # Picking the random noise pixel
             new_l[pixel_noise] = 1-new_l[pixel_noise] # Negating the pixel value at the noise index
             add_noise+=1
         return new_l
@@ -40,7 +42,7 @@ class LetterNNET:
             new_h = self.generateHList(num_noise)
             print(new_h,file=current_file)
         current_file.close()
-    # Generates "dataSize" random L arrays with "num_noise" random pixels as noise. 
+    # Generates "dataSize" random L arrays with "num_noise" random pixels as noise
     # ALl the random lists get stored in "file_name"
     def generateLData(self, file_name, dataSize, num_noise):
         current_file = open(file_name,"w")
@@ -48,12 +50,17 @@ class LetterNNET:
             new_l = self.generateLList(num_noise)
             print(new_l,file=current_file)
         current_file.close()
-   #
+   # Generates a sample of randomized H or L class lists with the same amount of noise
+   # NOTE: The very last list will always be the sampleData list, which is crucial for the program to know the origin class for each list
+   # sampleData: List containing the class idendifier for each list in sample file
+   # For each list i in the Sample:
+   # Value: 0 at list i - Belongs to L Class or
+   # Value: 1 at list i - Belongs to H class 
     def generateSample(self, file_name, sampleSize, num_noise):
         current_file = open(file_name,"w")
         sampleData = []
         for i in range(0,sampleSize):
-            if randrange(1,10)%2 == 0:
+            if randrange(1,11)%2 == 0:
                 new_list = self.generateHList(num_noise)
                 sampleData.append(1)
             else:
@@ -62,6 +69,7 @@ class LetterNNET:
             print(new_list,file=current_file)
         print(sampleData,file=current_file,end="")
     # Gets the last list from the sample data because it is the only list that tells us which letters were randomly generated
+    # NOTE: We make sure to remove this list from the sampleData so that it doesn't get included in the sampling process!
     def getSampleList(self, sampleData):
         sampleList = sampleData[-1]
         sampleData.pop()
@@ -69,9 +77,6 @@ class LetterNNET:
     def getSampleLetters(self, sampleList):
         letterData = [0,0]
         for i in sampleList:
-            if i == 0:
-                letterData[i]+=1
-            elif i == 1:
                 letterData[i]+=1
         return letterData
     # HELPER FUNCTIONS
@@ -119,7 +124,7 @@ class LetterNNET:
         for line in line_read:
             data_list.append(list.copy(ast.literal_eval(line)))
         return data_list
-        # Creates a list of size "listLength" where the values are disctly random in the range [1,24]
+    # Creates a list of size "listLength" where the values are disctly random in the range [1,24]
     def build_JmSet(self, listLength, tuple_size):
         distinctVals = dict()
         A = [None] * listLength
@@ -143,16 +148,15 @@ class LetterNNET:
     # Trains the H or L Class based on the Smset
     # train_HSet: True, trains H class..... False, trains L class
     def train_Sm(self, Sm_set, train_HSet):
-        str_val = 0
+        tuuple_val = 0
         if train_HSet:
             for i in range(0,len(Sm_set)):
-                str_val = self.tuple_to_int(Sm_set[i])
-                self.T_H[i][str_val] +=1
+                tuple_val = self.tuple_to_int(Sm_set[i])
+                self.T_H[i][tuple_val] +=1
         else: 
             for i in range(0,len(Sm_set)):
-                str_val = self.tuple_to_int(Sm_set[i])
-                self.T_L[i][str_val] += 1
-
+                tuple_val = self.tuple_to_int(Sm_set[i])
+                self.T_L[i][tuple_val] += 1
     # Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
     def trainHSet(self, data_fname, tuple_size):
         letter_data = self.grabData(data_fname)
@@ -161,10 +165,9 @@ class LetterNNET:
         for i in letter_data:
             Sm_set = self.build_SmSet(i,self.H_Jm,tuple_size)
             self.train_Sm(Sm_set,True)
-            
         # PRINTING THE self.T_H trained set
         self.print_training_set("H")
-    # Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
+    # Takes in an L dataset from the "data_fname" file and updates the T_L arrays based on the tuple sizes
     def trainLSet(self, data_fname, tuple_size):
         letter_data = self.grabData(data_fname)
         letter_length = len(letter_data[0])
@@ -174,8 +177,8 @@ class LetterNNET:
             self.train_Sm(Sm_set,False)
         # PRINTING THE self.T_H trained set
         self.print_training_set("L")       
-    # CWO: 
-    def sampleTesting(self, sample_data_fname,tuple_size):
+    # Uses the trained H and L lists to determine whether the letter lists in the "sample_data_fname" file
+    def sampleTesting(self, sample_data_fname, tuple_size):
         sample_data = self.grabData(sample_data_fname)
         sample_list = self.getSampleList(sample_data)
         sample_letters = self.getSampleLetters(sample_list)
@@ -183,35 +186,40 @@ class LetterNNET:
         L_count = 0
         H_sum = 0
         L_sum = 0
+        both_sum = 0
         current_letter = 0
         correct = 0
         for i in sample_data:
             correct_letter = sample_list[current_letter] 
             H_sum = self.compute_list_val(i,"H",tuple_size)
             L_sum = self.compute_list_val(i,"L",tuple_size)
-            print("Letter List:",current_letter,"\t",i,end="\t")
-            print("Actual:\t",end="")
+            print("Letter:",current_letter+1,end="\t\t")
+            print(i,"A:",sep="\t",end="\t")
             if correct_letter == 1:
-                print("H",end="\t\t")
+                print("H",end="\t")
             elif correct_letter == 0:
-                print("L",end="\t\t")
-            print("Guess:",end="\t")
+                print("L",end="\t")
+
+            print("G:",end="\t")
             if H_sum > L_sum:
                 H_count+=1
-                print("H")
                 if correct_letter == 1:
                     correct+=1
+                    print("H")
+                else:
+                    print("H\tINCORRECT")
             else:
                 L_count+=1
-                print("L")
                 if correct_letter == 0:
                     correct+=1
+                    print("L")
+                else:
+                    print("L\tINCORRECT")
             current_letter+=1
         # Prints the number of H and L guessed
-        print("Actual Count:",end="\t")
-        print("H:\t",sample_letters[1],end="\t")
-        print("L:\t",sample_letters[0])
+        print("\nActual Count:",end="\t")
+        print("H:",sample_letters[1],"L:",sample_letters[0],sep="\t")
         print("Guess Count:",end="\t")
-        print("H:\t",H_count,end="\t")
-        print("L:\t",L_count)
-        print("Accuracy:\t",correct/len(sample_data))
+        print("H:",H_count,"L:",L_count,sep="\t")
+        print("Correct:",correct,"\nIncorrect:",len(sample_data)-correct)
+        print("Accuracy:\t",(correct/len(sample_data))*100,"%")
