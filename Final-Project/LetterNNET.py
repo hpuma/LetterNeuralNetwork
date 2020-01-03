@@ -8,8 +8,8 @@ class LetterNNET:
         # T counts
         self.T_L = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
         # Storing the Jm sets used when training the letter class
-        self.H_Jm = []
-        self.L_Jm = []
+        self.H_Jm = None
+        self.L_Jm = None
         # Templates for each letter class, this is used to generate an array with a random noise
         self.H = [[1,0,1,1,1,1,1,0,1,1,0,1],[1,0,1,1,0,1,1,1,1,1,0,1],[1,0,1,1,1,1,1,1,1,1,0,1]]
         self.L = [1,0,0,1,0,0,1,0,0,1,1,1]
@@ -74,9 +74,12 @@ class LetterNNET:
         sampleList = sampleData[-1]
         sampleData.pop()
         return sampleList
-    def getSampleLetters(self, sampleList):
+    # Gets the letter class counts from the sampleData list
+    # Index : 0 -  Class L
+    # Index : 1 - Class H
+    def getSampleLetters(self, sampleData):
         letterData = [0,0]
-        for i in sampleList:
+        for i in sampleData:
                 letterData[i]+=1
         return letterData
     # HELPER FUNCTIONS
@@ -104,7 +107,7 @@ class LetterNNET:
                 list_sum += self.T_L[j][self.tuple_to_int(i)] # Gets the sum of the n tuples
                 j+=1
             return list_sum
-        # Prints the trained data set based on the letter
+    # Prints the trained data set based on the letter
     def print_training_set(self,letter):
         letter = letter.lower();
         if 'h' in letter:
@@ -124,7 +127,8 @@ class LetterNNET:
         for line in line_read:
             data_list.append(list.copy(ast.literal_eval(line)))
         return data_list
-    # Creates a list of size "listLength" where the values are disctly random in the range [1,24]
+    # Creates a list of size "listLength" where the values are disctly random in the range [0,listLength)
+    # The list is then divided evenly by "tuple_size" size tuples
     def build_JmSet(self, listLength, tuple_size):
         distinctVals = dict()
         A = [None] * listLength
@@ -137,7 +141,7 @@ class LetterNNET:
                     distinctVals[new_val] = 1
                     distinct = True
         return self.divideList(A,tuple_size)
-    # Creates Sm set list that has uses the values from the jm_set as the indexes to access the letter_list values
+    # Creates Sm set list that uses the values from the jm_set as the indexes to access the letter_list values
     def build_SmSet(self, letter_list, jm_set, tuple_size):
         Sm_set = [None]*len(letter_list)
         Sm_set = self.divideList(Sm_set,tuple_size)
@@ -146,7 +150,9 @@ class LetterNNET:
                 Sm_set[i][j] = letter_list[jm_set[i][j]]
         return Sm_set
     # Trains the H or L Class based on the Smset
-    # train_HSet: True, trains H class..... False, trains L class
+    # train_HSet: Boolean
+        # True, trains H class
+        # False, trains L class
     def train_Sm(self, Sm_set, train_HSet):
         tuuple_val = 0
         if train_HSet:
@@ -158,20 +164,26 @@ class LetterNNET:
                 tuple_val = self.tuple_to_int(Sm_set[i])
                 self.T_L[i][tuple_val] += 1
     # Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
-    def trainHSet(self, data_fname, tuple_size):
+    def trainHSet(self, data_fname, tuple_size, input_Jm=None):
         letter_data = self.grabData(data_fname)
-        letter_length = len(letter_data[0])
-        self.H_Jm = self.build_JmSet(letter_length,tuple_size)
+        if input_Jm == None:
+            input_Jm = self.build_JmSet(len(letter_data[0]),tuple_size)
+        if len(input_Jm) != int((len(letter_data[0])/tuple_size)):
+           input_Jm = self.divideList(input_Jm, tuple_size) 
+        self.H_Jm = input_Jm
         for i in letter_data:
             Sm_set = self.build_SmSet(i,self.H_Jm,tuple_size)
             self.train_Sm(Sm_set,True)
         # PRINTING THE self.T_H trained set
         self.print_training_set("H")
     # Takes in an L dataset from the "data_fname" file and updates the T_L arrays based on the tuple sizes
-    def trainLSet(self, data_fname, tuple_size):
+    def trainLSet(self, data_fname, tuple_size, input_Jm=None):
         letter_data = self.grabData(data_fname)
-        letter_length = len(letter_data[0])
-        self.L_Jm = self.build_JmSet(letter_length,tuple_size)
+        if input_Jm == None:
+            input_Jm = self.build_JmSet(len(letter_data[0]),tuple_size)
+        if len(input_Jm) != (len(letter_data[0])/tuple_size):
+           input_Jm = self.divideList(input_Jm, tuple_size)
+        self.L_Jm = input_Jm
         for i in letter_data:
             Sm_set = self.build_SmSet(i,self.L_Jm,tuple_size)
             self.train_Sm(Sm_set,False)
@@ -179,41 +191,48 @@ class LetterNNET:
         self.print_training_set("L")       
     # Uses the trained H and L lists to determine whether the letter lists in the "sample_data_fname" file
     def sampleTesting(self, sample_data_fname, tuple_size):
-        sample_data = self.grabData(sample_data_fname)
-        sample_list = self.getSampleList(sample_data)
-        sample_letters = self.getSampleLetters(sample_list)
-        H_count = 0
-        L_count = 0
-        H_sum = 0
+        sample_data = self.grabData(sample_data_fname) # Getting all the lines from the sample file
+        sample_list = self.getSampleList(sample_data) # Getting the imporant class list from the sample file
+        sample_letters = self.getSampleLetters(sample_list) # Getting the class counts of the sample file by using the sampleData list
+        # Program guessing counts for each class
+        H_count = 0 
+        L_count = 0 
+        # Sum variables that correspond the the list in the sample file, This is the total sum from the Trained arrays for each list
+        # These sums are used by the computer to determine whther the sample lists is a CLASS H  OR CLASS L
+        # Greater sum computed detirmes the sapmple list class
+        H_sum = 0 
         L_sum = 0
-        both_sum = 0
-        current_letter = 0
-        correct = 0
-        for i in sample_data:
-            correct_letter = sample_list[current_letter] 
-            H_sum = self.compute_list_val(i,"H",tuple_size)
+
+        current_letter = 0 # The index for the sampleData list so that we know the actual class of the sample list
+        correct = 0 # Keeps track of the correct guesses made by the computer
+
+        for i in sample_data: # For each sample list in the sample file
+            correct_letter = sample_list[current_letter] # The correct letter class of the current list 
+            H_sum = self.compute_list_val(i,"H",tuple_size) # Sums of the current list
             L_sum = self.compute_list_val(i,"L",tuple_size)
+            # First, we print out sample list and the correct letter class for the current value
             print("Letter:",current_letter+1,end="\t\t")
             print(i,"A:",sep="\t",end="\t")
             if correct_letter == 1:
                 print("H",end="\t")
             elif correct_letter == 0:
                 print("L",end="\t")
-
+            # Then, we print the computer's guess based on the H_sum and L_sum
+            # We also update the number of correct guesses accordingly
             print("G:",end="\t")
             if H_sum > L_sum:
                 H_count+=1
-                if correct_letter == 1:
+                if correct_letter == 1: # When we guess H and the correct letter is H
                     correct+=1
                     print("H")
-                else:
+                else: # The guess was H but the letter was actually L
                     print("H\tINCORRECT")
             else:
                 L_count+=1
-                if correct_letter == 0:
+                if correct_letter == 0: # When the guess is L and the actual letter is L
                     correct+=1
                     print("L")
-                else:
+                else: # The guess was L but the actual letter was H 
                     print("L\tINCORRECT")
             current_letter+=1
         # Prints the number of H and L guessed
