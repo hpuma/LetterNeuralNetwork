@@ -2,12 +2,14 @@ from random import randrange
 import ast
 class LetterNNET:
     def __init__(self):
-        # Top -> Bottom 0,1,2,3, These arrays are the Training sets
-        # H counts 
+        # Class Training Lists:
+        # Letter Indexing: Top -> Bottom 0,1,2,3,...n-1 
+        # H Counts containing the tuple occurance after training
         self.T_H = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
-        # T counts
+        # T counts containing the tuple occurance after training
         self.T_L = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
-        # Storing the Jm sets used when training the letter class
+        # Class Jm sets that are used for training and sampling
+        # Letter_Jm: A set containing the indices of the sampled pixeled when training and sampling. 
         self.H_Jm = None
         self.L_Jm = None
         # Templates for each letter class, this is used to generate an array with a random noise
@@ -16,7 +18,7 @@ class LetterNNET:
     # DATA GENERATOR HELPER FUNCTIONS
     # Generates a H or L class list with "num_noise" randomized pixels as noise
     # Noise: A pixel in the letter list that had it's previous value negated
-    def generateHList(self, num_noise):
+    def generateHList(self, num_noise:int):
         new_h = list.copy(self.H[randrange(0,3)]) # Making a copy of the H template
         h_length = len(new_h)
         add_noise = 0
@@ -25,7 +27,7 @@ class LetterNNET:
             new_h[pixel_noise] = 1-new_h[pixel_noise] # Negating the pixel value at the noise index
             add_noise += 1
         return new_h
-    def generateLList(self, num_noise):
+    def generateLList(self, num_noise:int):
         new_l = list.copy(self.L) # Making a copy of the L template
         l_length = len(new_l)
         add_noise = 0
@@ -36,7 +38,7 @@ class LetterNNET:
         return new_l
     # Generates "dataSize" random H arrays with "num_noise" random pixels as noise 
     # ALl the random lists get stored in "file_name"
-    def generateHData(self, file_name, dataSize, num_noise):
+    def generateHData(self, file_name:str, dataSize:int, num_noise:int):
         current_file = open(file_name,"w")
         for i in range(0, dataSize):
             new_h = self.generateHList(num_noise)
@@ -44,7 +46,7 @@ class LetterNNET:
         current_file.close()
     # Generates "dataSize" random L arrays with "num_noise" random pixels as noise
     # ALl the random lists get stored in "file_name"
-    def generateLData(self, file_name, dataSize, num_noise):
+    def generateLData(self, file_name:str, dataSize:int, num_noise:int):
         current_file = open(file_name,"w")
         for i in range(0, dataSize):
             new_l = self.generateLList(num_noise)
@@ -56,7 +58,7 @@ class LetterNNET:
    # For each list i in the Sample:
    # Value: 0 at list i - Belongs to L Class or
    # Value: 1 at list i - Belongs to H class 
-    def generateSample(self, file_name, sampleSize, num_noise):
+    def generateSample(self, file_name:str, sampleSize:int, num_noise:int):
         current_file = open(file_name,"w")
         sampleData = []
         for i in range(0,sampleSize):
@@ -70,14 +72,14 @@ class LetterNNET:
         print(sampleData,file=current_file,end="")
     # Gets the last list from the sample data because it is the only list that tells us which letters were randomly generated
     # NOTE: We make sure to remove this list from the sampleData so that it doesn't get included in the sampling process!
-    def getSampleList(self, sampleData):
+    def getSampleList(self, sampleData:list)->list:
         sampleList = sampleData[-1]
         sampleData.pop()
         return sampleList
     # Gets the letter class counts from the sampleData list
     # Index : 0 -  Class L
     # Index : 1 - Class H
-    def getSampleLetters(self, sampleData):
+    def getSampleLetters(self, sampleData:list)->list:
         letterData = [0,0]
         for i in sampleData:
                 letterData[i]+=1
@@ -85,13 +87,13 @@ class LetterNNET:
     # HELPER FUNCTIONS
     # Takes any tuple and returns the integer value of it
     # To accomplish this we turn the list into a string and use the python int() to turn it into a string, we pass 2 to let it know that we are going from base 2 to base 10
-    def divideList(self, A, tuple_size):
+    def divideList(self, A:list, tuple_size:int)->list:
         return list.copy([A[j:j + tuple_size] for j in range(0,len(A), tuple_size)])
-    def tuple_to_int(self,A):
+    def tuple_to_int(self,A:list)->list:
         return int("".join([str(i) for i in A]),2)
     # Note: must specify using the H or L Sm set attributes
     # Computes the value of the input_list based on the H or L class
-    def compute_list_val(self, input_list, sample_from, tuple_size): #
+    def compute_list_val(self, input_list:list, sample_from:int, tuple_size:int)->int:
         sample_from = sample_from.lower()
         list_sum = 0
         j = 0        
@@ -108,7 +110,7 @@ class LetterNNET:
                 j+=1
             return list_sum
     # Prints the trained data set based on the letter
-    def print_training_set(self,letter):
+    def print_training_set(self,letter:str):
         letter = letter.lower();
         if 'h' in letter:
             print("TRAINED SET FOR: H")
@@ -120,7 +122,7 @@ class LetterNNET:
                 print(i)
     # NEURAL NETWORK FUNCTIONS
     # Grabs the string representations of the lines in the file "file_name", this function returns a list of lists
-    def grabData(self, file_name):          
+    def grabData(self, file_name:str):          
         read_file = open(file_name,"r")
         line_read = read_file.readlines()
         data_list = []
@@ -129,7 +131,7 @@ class LetterNNET:
         return data_list
     # Creates a list of size "listLength" where the values are disctly random in the range [0,listLength)
     # The list is then divided evenly by "tuple_size" size tuples
-    def build_JmSet(self, listLength, tuple_size):
+    def build_JmSet(self, listLength:int, tuple_size:int)->list:
         distinctVals = dict()
         A = [None] * listLength
         for i in range(0,listLength):
@@ -142,18 +144,18 @@ class LetterNNET:
                     distinct = True
         return self.divideList(A,tuple_size)
     # Creates Sm set list that uses the values from the jm_set as the indexes to access the letter_list values
-    def build_SmSet(self, letter_list, jm_set, tuple_size):
+    def build_SmSet(self, letter_list:list, Jm_set:list, tuple_size:int)->list:
         Sm_set = [None]*len(letter_list)
         Sm_set = self.divideList(Sm_set,tuple_size)
         for i in range(0,len(Sm_set)):
             for j in range (0,len(Sm_set[i])):
-                Sm_set[i][j] = letter_list[jm_set[i][j]]
+                Sm_set[i][j] = letter_list[Jm_set[i][j]]
         return Sm_set
     # Trains the H or L Class based on the Smset
     # train_HSet: Boolean
         # True, trains H class
         # False, trains L class
-    def train_Sm(self, Sm_set, train_HSet):
+    def train_Sm(self, Sm_set:list, train_HSet:bool)->None:
         tuuple_val = 0
         if train_HSet:
             for i in range(0,len(Sm_set)):
@@ -164,7 +166,7 @@ class LetterNNET:
                 tuple_val = self.tuple_to_int(Sm_set[i])
                 self.T_L[i][tuple_val] += 1
     # Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
-    def trainHSet(self, data_fname, tuple_size, input_Jm=None):
+    def trainHSet(self, data_fname:str, tuple_size:int, input_Jm=None)->None:
         letter_data = self.grabData(data_fname)
         if input_Jm == None:
             input_Jm = self.build_JmSet(len(letter_data[0]),tuple_size)
@@ -177,7 +179,7 @@ class LetterNNET:
         # PRINTING THE self.T_H trained set
         self.print_training_set("H")
     # Takes in an L dataset from the "data_fname" file and updates the T_L arrays based on the tuple sizes
-    def trainLSet(self, data_fname, tuple_size, input_Jm=None):
+    def trainLSet(self, data_fname:str, tuple_size:int, input_Jm=None)->None:
         letter_data = self.grabData(data_fname)
         if input_Jm == None:
             input_Jm = self.build_JmSet(len(letter_data[0]),tuple_size)
@@ -190,7 +192,7 @@ class LetterNNET:
         # PRINTING THE self.T_H trained set
         self.print_training_set("L")       
     # Uses the trained H and L lists to determine whether the letter lists in the "sample_data_fname" file
-    def sampleTesting(self, sample_data_fname, tuple_size):
+    def sampleTesting(self, sample_data_fname:str, tuple_size:int)->None:
         sample_data = self.grabData(sample_data_fname) # Getting all the lines from the sample file
         sample_list = self.getSampleList(sample_data) # Getting the imporant class list from the sample file
         sample_letters = self.getSampleLetters(sample_list) # Getting the class counts of the sample file by using the sampleData list
