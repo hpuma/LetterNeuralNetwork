@@ -9,7 +9,7 @@ class LetterNNET:
         # T counts containing the tuple occurance after training
         self.T_L = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
         # Class Jm sets that are used for training and sampling
-        # Letter_Jm: A set containing the indices of the sampled pixeled when training and sampling. 
+        # Letter_Jm: A set containing the indices of the sampled pixels when training and sampling. 
         self.H_Jm = None
         self.L_Jm = None
         # Templates for each letter class, this is used to generate an array with a random noise
@@ -18,7 +18,7 @@ class LetterNNET:
     # DATA GENERATOR HELPER FUNCTIONS
     # Generates a H or L class list with "num_noise" randomized pixels as noise
     # Noise: A pixel in the letter list that had it's previous value negated
-    def generateHList(self, num_noise:int):
+    def generateHList(self, num_noise:int)->list:
         new_h = list.copy(self.H[randrange(0,3)]) # Making a copy of the H template
         h_length = len(new_h)
         add_noise = 0
@@ -27,7 +27,7 @@ class LetterNNET:
             new_h[pixel_noise] = 1-new_h[pixel_noise] # Negating the pixel value at the noise index
             add_noise += 1
         return new_h
-    def generateLList(self, num_noise:int):
+    def generateLList(self, num_noise:int)->list:
         new_l = list.copy(self.L) # Making a copy of the L template
         l_length = len(new_l)
         add_noise = 0
@@ -38,7 +38,7 @@ class LetterNNET:
         return new_l
     # Generates "dataSize" random H arrays with "num_noise" random pixels as noise 
     # ALl the random lists get stored in "file_name"
-    def generateHData(self, file_name:str, dataSize:int, num_noise:int):
+    def generateHData(self, file_name:str, dataSize:int, num_noise:int)->None:
         current_file = open(file_name,"w")
         for i in range(0, dataSize):
             new_h = self.generateHList(num_noise)
@@ -46,7 +46,7 @@ class LetterNNET:
         current_file.close()
     # Generates "dataSize" random L arrays with "num_noise" random pixels as noise
     # ALl the random lists get stored in "file_name"
-    def generateLData(self, file_name:str, dataSize:int, num_noise:int):
+    def generateLData(self, file_name:str, dataSize:int, num_noise:int)->None:
         current_file = open(file_name,"w")
         for i in range(0, dataSize):
             new_l = self.generateLList(num_noise)
@@ -54,11 +54,11 @@ class LetterNNET:
         current_file.close()
    # Generates a sample of randomized H or L class lists with the same amount of noise
    # NOTE: The very last list will always be the sampleData list, which is crucial for the program to know the origin class for each list
-   # sampleData: List containing the class idendifier for each list in sample file
+   # The list "sampleData" is a 2D list containing the class idendifier for each sublist in sample file
    # For each list i in the Sample:
    # Value: 0 at list i - Belongs to L Class or
    # Value: 1 at list i - Belongs to H class 
-    def generateSample(self, file_name:str, sampleSize:int, num_noise:int):
+    def generateSample(self, file_name:str, sampleSize:int, num_noise:int)->None:
         current_file = open(file_name,"w")
         sampleData = []
         for i in range(0,sampleSize):
@@ -70,13 +70,13 @@ class LetterNNET:
                 sampleData.append(0)
             print(new_list,file=current_file)
         print(sampleData,file=current_file,end="")
-    # Gets the last list from the sample data because it is the only list that tells us which letters were randomly generated
+    # Gets the last list from the 2D list "sampleData" because it is the only list that tells us which letters were randomly generated
     # NOTE: We make sure to remove this list from the sampleData so that it doesn't get included in the sampling process!
     def getSampleList(self, sampleData:list)->list:
         sampleList = sampleData[-1]
         sampleData.pop()
         return sampleList
-    # Gets the letter class counts from the sampleData list
+    # Gets the letter class counts from the "sampleData"" list
     # Index : 0 -  Class L
     # Index : 1 - Class H
     def getSampleLetters(self, sampleData:list)->list:
@@ -89,11 +89,12 @@ class LetterNNET:
     # To accomplish this we turn the list into a string and use the python int() to turn it into a string, we pass 2 to let it know that we are going from base 2 to base 10
     def divideList(self, A:list, tuple_size:int)->list:
         return list.copy([A[j:j + tuple_size] for j in range(0,len(A), tuple_size)])
+    # Takes in a tuple that is divided into n tuples, this function returns the n tuple's binary->decimal conversion
     def tuple_to_int(self,A:list)->list:
         return int("".join([str(i) for i in A]),2)
     # Note: must specify using the H or L Sm set attributes
-    # Computes the value of the input_list based on the H or L class
-    def compute_list_val(self, input_list:list, sample_from:int, tuple_size:int)->int:
+    # Computes the value of the input_list based on the H or L trained class counts T_H pr T_L
+    def compute_list_val(self, input_list:list, sample_from:str, tuple_size:int)->int:
         sample_from = sample_from.lower()
         list_sum = 0
         j = 0        
@@ -109,8 +110,8 @@ class LetterNNET:
                 list_sum += self.T_L[j][self.tuple_to_int(i)] # Gets the sum of the n tuples
                 j+=1
             return list_sum
-    # Prints the trained data set based on the letter
-    def print_training_set(self,letter:str):
+    # Prints the trained data set based on the letter class
+    def print_training_set(self,letter:str)->list:
         letter = letter.lower();
         if 'h' in letter:
             print("TRAINED SET FOR: H")
@@ -121,15 +122,15 @@ class LetterNNET:
             for i in self.T_L:
                 print(i)
     # NEURAL NETWORK FUNCTIONS
-    # Grabs the string representations of the lines in the file "file_name", this function returns a list of lists
-    def grabData(self, file_name:str):          
+    # Grabs the string representations of the lines in the file "file_name", this function returns a 2D list of all the lists from the file
+    def grabData(self, file_name:str)->list:          
         read_file = open(file_name,"r")
         line_read = read_file.readlines()
         data_list = []
         for line in line_read:
             data_list.append(list.copy(ast.literal_eval(line)))
         return data_list
-    # Creates a list of size "listLength" where the values are disctly random in the range [0,listLength)
+    # Creates a list of size "listLength" where the values are distinctly random in the range [0,listLength)
     # The list is then divided evenly by "tuple_size" size tuples
     def build_JmSet(self, listLength:int, tuple_size:int)->list:
         distinctVals = dict()
@@ -143,7 +144,7 @@ class LetterNNET:
                     distinctVals[new_val] = 1
                     distinct = True
         return self.divideList(A,tuple_size)
-    # Creates Sm set list that uses the values from the jm_set as the indexes to access the letter_list values
+    # Creates Sm set list that uses the values from the Jm_set as the indexes to access the letter_list values
     def build_SmSet(self, letter_list:list, Jm_set:list, tuple_size:int)->list:
         Sm_set = [None]*len(letter_list)
         Sm_set = self.divideList(Sm_set,tuple_size)
@@ -151,10 +152,10 @@ class LetterNNET:
             for j in range (0,len(Sm_set[i])):
                 Sm_set[i][j] = letter_list[Jm_set[i][j]]
         return Sm_set
-    # Trains the H or L Class based on the Smset
+    # Trains the H or L Class based on the Sm_set
     # train_HSet: Boolean
-        # True, trains H class
-        # False, trains L class
+    # True, trains H class
+    # False, trains L class
     def train_Sm(self, Sm_set:list, train_HSet:bool)->None:
         tuuple_val = 0
         if train_HSet:
@@ -165,7 +166,7 @@ class LetterNNET:
             for i in range(0,len(Sm_set)):
                 tuple_val = self.tuple_to_int(Sm_set[i])
                 self.T_L[i][tuple_val] += 1
-    # Takes in an H dataset from a text file and updates the T_H arrays based on the tuple sizes
+    # Takes in an H dataset from a text file and update the T_H arrays based on the decimal values of the n sized tuples
     def trainHSet(self, data_fname:str, tuple_size:int, input_Jm=None)->None:
         letter_data = self.grabData(data_fname)
         if input_Jm == None:
@@ -178,7 +179,7 @@ class LetterNNET:
             self.train_Sm(Sm_set,True)
         # PRINTING THE self.T_H trained set
         self.print_training_set("H")
-    # Takes in an L dataset from the "data_fname" file and updates the T_L arrays based on the tuple sizes
+    # Takes in an L dataset from the "data_fname" file and updates the T_L arrays based on each tuple value
     def trainLSet(self, data_fname:str, tuple_size:int, input_Jm=None)->None:
         letter_data = self.grabData(data_fname)
         if input_Jm == None:
@@ -192,16 +193,18 @@ class LetterNNET:
         # PRINTING THE self.T_H trained set
         self.print_training_set("L")       
     # Uses the trained H and L lists to determine whether the letter lists in the "sample_data_fname" file
+    # NOTE: The sample file must be generated by the "generateSample" function! or you can make it yourself but 
+    # make sure that the last list is the sampleData kist where 1 is H and 0 is L for each line in the sampleData file!!
     def sampleTesting(self, sample_data_fname:str, tuple_size:int)->None:
         sample_data = self.grabData(sample_data_fname) # Getting all the lines from the sample file
-        sample_list = self.getSampleList(sample_data) # Getting the imporant class list from the sample file
+        sample_list = self.getSampleList(sample_data) # Getting the important sampleData list from the sample file
         sample_letters = self.getSampleLetters(sample_list) # Getting the class counts of the sample file by using the sampleData list
         # Program guessing counts for each class
         H_count = 0 
         L_count = 0 
         # Sum variables that correspond the the list in the sample file, This is the total sum from the Trained arrays for each list
-        # These sums are used by the computer to determine whther the sample lists is a CLASS H  OR CLASS L
-        # Greater sum computed detirmes the sapmple list class
+        # These sums are used by the computer to determine whether the sample lists is a CLASS H  OR CLASS L
+        # Greater sum computed determines the sample list class
         H_sum = 0 
         L_sum = 0
 
@@ -237,7 +240,7 @@ class LetterNNET:
                 else: # The guess was L but the actual letter was H 
                     print("L\tINCORRECT")
             current_letter+=1
-        # Prints the number of H and L guessed
+        # Prints the number of H and L guessed and the accuracy of the program
         print("\nActual Count:",end="\t")
         print("H:",sample_letters[1],"L:",sample_letters[0],sep="\t")
         print("Guess Count:",end="\t")
