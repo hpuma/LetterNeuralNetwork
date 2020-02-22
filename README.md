@@ -12,12 +12,11 @@ A List Based Neural Network that categorizes a letter based on its list represen
                          # NOTE: The last list is NOT part of the test data.
                          # It is the list that specifies the correct letter class for each list in the test_data
  ```
-
 ## Useful Functions in LetterNNET.py
 
 
-    1. generate_LETTER_Data: Generates letter list representations randomly and outputs it to a file.
 ```Python
+#  1. generate_LETTER_Data: Generates letter list representations randomly and outputs it to a file.
 def generateHData(file_name:str, data_size:int, num_noise:int):
 def generateLData(file_name:str, data_size:int, num_noise:int):
 ```
@@ -26,21 +25,21 @@ def generateLData(file_name:str, data_size:int, num_noise:int):
     num_noise: Number of distorted elements for each letter list. 
     
     
-    2. build_JmSet: Generates a list of random values that is used to sample from the letter lists 
-       when training or testing input data. The Jm set contains evenly 
-       divided tuples of size tuple_size.
 ```Python
-def build_JmSet(list_length:int, tuple_size:int)
+# 2. build_JmSet: Generates a list of random values that is used to sample from the letter lists 
+# when training or testing input data. The Jm set contains evenly 
+# divided tuples of size tuple_size.
+def build_JmSet(list_length:int, tuple_size:int):
 ```
     list_length: Must be the same length as the letter lists because we must generate valid indexes!
     tuple_size: Size of the evenly divided tuples.
     
     
-    3. train_LETTER_set: Trains the neural network based on the letter list data provided
-    by the data_fname file
 ```Python
-    def trainHSet(data_fname:str, tuple_size:int, input_Jm=None)
-    def trainLSet(data_fname:str, tuple_size:int, input_Jm=None)
+# 3. train_LETTER_set: Trains the neural network based on the letter list data provided
+# by the data_fname file.
+def trainHSet(data_fname:str, tuple_size:int, input_Jm=None):
+def trainLSet(data_fname:str, tuple_size:int, input_Jm=None):
 ```
     data_fname: Name of the ouput file containing the H or L letter lists.
     tuple_size: Size of the tuoles that are used for sampling from the letter list.
@@ -49,22 +48,23 @@ def build_JmSet(list_length:int, tuple_size:int)
     its appropriate letter class Jm_set list. 
     
     
-    4. generateSample: Generates a random set of H or L letter list representations that will 
-    be used as input for the neural network
 ```Python
+# 4. generateSample: Generates a random set of H or L letter list representations that will 
+# be used as input for the neural network.
 def generateSample(file_name:str, sample_size:int, num_noise:int):
 ```
     file_name: Name of the output file for the generated data.
-    data_size: Number randomized letter lists
+    data_size: Number randomized letter lists.
     num_noise: Number of distorted elements for each letter list. 
     
-    5. sampleTesting: Uses the trained L and H data to guess the letter class of each
-    list presentation from the input file
+
 ```Python
+# 5. sampleTesting: Uses the trained L and H data to guess the letter class of each
+# list presentation from the input file.
 def sampleTesting(sample_data_fname:str, tuple_size:int):
 ```
-    sample_data_fname: Name of the file containing the input letter lists
-    tuple_size: Size of the tuples used for sampling
+    sample_data_fname: Name of the file containing the input letter lists.
+    tuple_size: Size of the tuples used for sampling.
     AGAIN ---
     NOTE: The last list is NOT part of the test data. It is the list that specifies the correct 
     letter class for each list in the test_data. If you want to provide custom sample data, make sure 
